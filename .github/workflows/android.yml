@@ -19,14 +19,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x mobile_app/gradlew
-        continue-on-error: true
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
           channel: 'stable'
 
       - name: Install dependencies and Scaffold
@@ -34,6 +29,11 @@ jobs:
           cd mobile_app
           # Re-create the project structure to ensure android/ folder exists
           flutter create --org com.barbie --project-name ai_ide . --overwrite
+          
+          # Move misplaced source code to the correct location in the android project
+          mkdir -p android/app/src/main/kotlin/com/barbie/ai_ide/sandbox
+          cp src/main/kotlin/com/barbie/ai_ide/sandbox/LocalSandbox.kt android/app/src/main/kotlin/com/barbie/ai_ide/sandbox/LocalSandbox.kt
+          
           flutter pub get
 
       - name: Build APK
@@ -45,5 +45,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: mobile_app/build/outputs/apk/debug/*.apk
-        continue-on-error: true
+          path: mobile_app/build/app/outputs/flutter-apk/app-debug.apk
