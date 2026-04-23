@@ -29,9 +29,11 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      - name: Install dependencies
+      - name: Install dependencies and Scaffold
         run: |
           cd mobile_app
+          # Re-create the project structure to ensure android/ folder exists
+          flutter create --org com.barbie --project-name ai_ide . --overwrite
           flutter pub get
 
       - name: Build APK
