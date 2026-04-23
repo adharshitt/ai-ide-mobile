@@ -2,44 +2,54 @@ import { Hono } from 'hono';
 
 const app = new Hono();
 
-// Middleware for MongoDB connection (using Data API or similar)
-// For now, we'll define the endpoints
+// Configuration (To be moved to wrangler secrets)
+const GOOGLE_CLIENT_ID = 'YOUR_CLIENT_ID';
+const GOOGLE_CLIENT_SECRET = 'YOUR_CLIENT_SECRET';
+const REDIRECT_URI = 'https://ai-ide-orchestrator.your-subdomain.workers.dev/auth/callback';
 
 app.get('/', (c) => c.text('AI IDE Orchestrator Active'));
 
 /**
- * IDENTITY VAULT
- * Handle Google OAuth tokens and mapping to Agent Personas
+ * AUTH: STEP 1 - Generate Auth URL
  */
-app.post('/auth/login', async (c) => {
-  const body = await c.req.json();
-  // TODO: Validate token and store in MongoDB
-  return c.json({ status: 'success', message: 'Identity linked' });
+app.get('/auth/login', (c) => {
+  const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/generative-language.retriever';
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent`;
+  return c.redirect(authUrl);
+});
+
+/**
+ * AUTH: STEP 2 - Callback & Token Exchange
+ */
+app.get('/auth/callback', async (c) => {
+  const code = c.req.query('code');
+  if (!code) return c.json({ error: 'No code provided' }, 400);
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: REDIRECT_URI,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  const tokens = await response.json();
+  
+  // TODO: Securely store tokens in MongoDB linked to a User Session
+  // For now, returning tokens to the app (In production, return a session ID)
+  return c.json({ status: 'success', tokens });
 });
 
 /**
  * MULTI-AGENT BLACKBOARD
- * Shared state for agents to interact
  */
 app.post('/blackboard/post', async (c) => {
-  const { agentId, content, targetAgentId } = await c.req.json();
-  // TODO: Save to MongoDB 'blackboard' collection
-  return c.json({ status: 'success' });
-});
-
-app.get('/blackboard/stream', async (c) => {
-  // TODO: Implement Server-Sent Events (SSE) or WebSockets for real-time updates
-  return c.text('Streaming blackboard updates...');
-});
-
-/**
- * GEMINI PROXY
- * Route requests to specific Gemini sessions
- */
-app.post('/gemini/execute', async (c) => {
-  const { sessionId, prompt, tools } = await c.req.json();
-  // TODO: Fetch session token from MongoDB, call Gemini API
-  return c.json({ status: 'processing', sessionId });
+  const { agentId, content } = await c.req.json();
+  return c.json({ status: 'success', agentId });
 });
 
 export default app;
