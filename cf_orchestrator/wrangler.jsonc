@@ -1,0 +1,8 @@
+{
+  "name": "ai-ide-orchestrator",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-04-01",
+  "vars": {
+    "MONGODB_DATABASE": "ai_ide"
+  }
+}
