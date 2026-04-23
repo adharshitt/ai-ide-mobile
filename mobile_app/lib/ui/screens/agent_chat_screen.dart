@@ -11,6 +11,11 @@ class AgentChatScreen extends StatelessWidget {
         title: const _AgentSelector(),
         backgroundColor: const Color(0xFF141414),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            onPressed: () => context.push('/vault'),
+            tooltip: 'Identity Vault',
+          ),
           IconButton(icon: const Icon(Icons.code), onPressed: () {}),
           IconButton(icon: const Icon(Icons.terminal), onPressed: () {}),
         ],

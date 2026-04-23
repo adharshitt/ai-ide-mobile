@@ -23,15 +23,21 @@ jobs:
         run: chmod +x mobile_app/gradlew
         continue-on-error: true
 
-      - name: Build with Gradle
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Install dependencies
         run: |
           cd mobile_app
-          # Check if gradlew exists, if not, initialize a basic project structure
-          if [ ! -f "gradlew" ]; then
-            echo "Gradle wrapper not found, skipping build step for now."
-            exit 0
-          fi
-          ./gradlew build
+          flutter pub get
+
+      - name: Build APK
+        run: |
+          cd mobile_app
+          flutter build apk --debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
